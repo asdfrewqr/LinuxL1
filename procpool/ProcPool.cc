@@ -7,7 +7,7 @@
 #include<string>
 #include<sys/wait.h>
 #include<sys/types.h>
-using namespace std;
+using namespace std; 
 #define PROCESS_NUM 5
 
 typedef void(*func_t)();
@@ -70,17 +70,22 @@ int recvTask(int readfd)
 int subEp::_num=0;
  void createProcess(vector<subEp>* subs,vector<func_t>&funcmap)
  {
+    vector<int> delFd;
  for(int i=0;i<PROCESS_NUM;i++)
     {
         int fds[2];
         int n=pipe(fds);
         assert(n==0);
         (void)n;//防止release版本n失效
-
+        
         pid_t id=fork();
         if(id==0)
         {
-
+            if(!delFd.empty())
+        {
+            for(int i=0;i<delFd.size();i++)
+            close(delFd[i]);
+        }
             close(fds[1]);
             while(true)
             {
@@ -100,6 +105,7 @@ int subEp::_num=0;
         close(fds[0]);
         subEp sub(id,fds[1]);
         (*subs).push_back(sub);
+        delFd.push_back(fds[1]);
     }
  }
  void sendTask(const subEp& s,int taskN)
